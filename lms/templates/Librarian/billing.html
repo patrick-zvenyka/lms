@@ -9,108 +9,63 @@
         <div class="container-fluid py-2">
           <div class="row">
             <div class="col-lg-8">
-              <div class="row">
-                <div class="col-md-4 col-4">
-                    <div class="card">
-                        <div class="card-header mx-4 p-3 text-center">
-                            <div class="icon icon-shape icon-lg bg-gradient-dark shadow text-center border-radius-lg">
-                              <i class="material-symbols-rounded opacity-10">people</i>
+                    <div class="col-md-12 col-4">
+                        <div class="card mt-4">
+                            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+                                <div class="bg-gradient-dark shadow-dark border-radius-lg pt-4 pb-3">
+                                  <h6 class="text-white text-capitalize ps-3">Filter</h6>
+                                </div>
                             </div>
-                        </div>
-                        <div class="card-body pt-0 p-3 text-center">
-                            <h6 class="text-center mb-0">Users Fined</h6>
-                            <span class="text-xs">Total fined</span>
-                            <hr class="horizontal dark my-3">
-                            <h5 class="mb-0">455</h5>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 col-4">
-                    <div class="card">
-                        <div class="card-header mx-4 p-3 text-center">
-                          <div class="icon icon-shape icon-lg bg-gradient-dark shadow text-center border-radius-lg">
-                            <i class="material-symbols-rounded opacity-10">account_balance</i>
+                          <div class="card-body p-3">
+                            <form id="filterForm">
+                              <div class="row">
+                                <div class="col-md-4 mb-3">
+                                  <label for="filterName" class="form-label">Name</label>
+                                  <input type="text" class="form-control" id="filterName" name="name" placeholder="Enter student name">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                  <label for="filterClass" class="form-label">Class</label>
+                                  <select class="form-select" id="filterClass" name="class">
+                                    <option value="" selected>All Classes</option>
+                                    <option value="10A">10A</option>
+                                    <option value="9B">9B</option>
+                                    <option value="11C">11C</option>
+                                  </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                  <label for="filterFineStatus" class="form-label">Fine Status</label>
+                                  <select class="form-select" id="filterFineStatus" name="fine_status">
+                                    <option value="" selected>All</option>
+                                    <option value="none">None</option>
+                                    <option value="late_return">Late Return</option>
+                                    <option value="damaged_book">Damaged Book</option>
+                                  </select>
+                                </div>
+                              </div>
+                              <div class="col-6 text-end">
+                                <button class="btn bg-gradient-dark mb-0" type="submit" form="filterForm">
+                                  <i class="material-symbols-rounded text-sm">search</i>Search
+                                </button>
+                              </div>
+                            </form>
                           </div>
                         </div>
-                        <div class="card-body pt-0 p-3 text-center">
-                          <h6 class="text-center mb-0">Salary</h6>
-                          <span class="text-xs">Belong Interactive</span>
-                          <hr class="horizontal dark my-3">
-                          <h5 class="mb-0">+$2000</h5>
-                        </div>
                     </div>
-                </div>
-                <div class="col-md-4 col-4">
-                    <div class="card">
-                        <div class="card-header mx-4 p-3 text-center">
-                          <div class="icon icon-shape icon-lg bg-gradient-dark shadow text-center border-radius-lg">
-                            <i class="material-symbols-rounded opacity-10">account_balance_wallet</i>
-                          </div>
-                        </div>
-                        <div class="card-body pt-0 p-3 text-center">
-                          <h6 class="text-center mb-0">Paypal</h6>
-                          <span class="text-xs">Freelance Payment</span>
-                          <hr class="horizontal dark my-3">
-                          <h5 class="mb-0">$455.00</h5>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-12 mb-lg-0 mb-4">
-                  <div class="card mt-4">
-                    <div class="card-header pb-0 p-3">
-                      <div class="row">
-                        <div class="col-6 d-flex align-items-center">
-                          <h6 class="mb-0">Filter</h6>
-                        </div>
-                        <div class="col-6 text-end">
-                          <a class="btn bg-gradient-dark mb-0" href="javascript:;"><i class="material-symbols-rounded text-sm">search</i>Search</a>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="card-body p-3">
-                      <div class="row">
-                        <div class="col-md-6 mb-md-0 mb-4">
-                          <div class="card card-body border card-plain border-radius-lg d-flex align-items-center flex-row">
-                            <img class="w-10 me-3 mb-0" src="../assets/img/logos/mastercard.png" alt="logo">
-                            <h6 class="mb-0">****&nbsp;&nbsp;&nbsp;****&nbsp;&nbsp;&nbsp;****&nbsp;&nbsp;&nbsp;7852</h6>
-                            <i class="material-symbols-rounded ms-auto text-dark cursor-pointer" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Card">edit</i>
-                          </div>
-                        </div>
-                        <div class="col-md-6">
-                          <div class="card card-body border card-plain border-radius-lg d-flex align-items-center flex-row">
-                            <img class="w-10 me-3 mb-0" src="../assets/img/logos/visa.png" alt="logo">
-                            <h6 class="mb-0">****&nbsp;&nbsp;&nbsp;****&nbsp;&nbsp;&nbsp;****&nbsp;&nbsp;&nbsp;5248</h6>
-                            <i class="material-symbols-rounded ms-auto text-dark cursor-pointer" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Card">edit</i>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="col-lg-4">
-             {% include 'Librarian/components/invoices.html' %}
             </div>
           </div>
+          <br>
           <div class="row">
             <div class="col-md-12 mt-4">
                 <div class="card">
-                    <div class="card-header pb-0">
-                      <div class="row">
-                        <div class="col-lg-6 col-7">
-                          <h6>Users List</h6>
-                          <p class="text-sm mb-0">
-                            <i class="fa fa-check text-info" aria-hidden="true"></i>
-                          </p>
+                    <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+                        <div class="bg-gradient-dark shadow-dark border-radius-lg pt-4 pb-3">
+                          <h6 class="text-white text-capitalize ps-3">Users List</h6>
                         </div>
-                       
-                      </div>
                     </div>
                     <div class="card-body px-0 pb-2">
                         <div class="table-responsive">
                             <table class="table table-bordered">
-                                <thead class="table-dark">
+                                <thead class="table-light">
                                     <tr>
                                         <th>#</th>
                                         <th>Name</th>
