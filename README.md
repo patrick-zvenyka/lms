@@ -60,9 +60,6 @@ A simple Library Management System (LMS) built using Django to manage books, bor
 - **Admin Panel**: Access the admin panel by navigating to `http://127.0.0.1:8000/admin/` and log in using the superuser credentials you created.
 - **Library Operations**: Use the system to manage books, track borrowing transactions, and calculate fines based on overdue days.
 
-## Screenshots
-
-_(Add some screenshots or GIFs here to showcase the app in action)_
 
 ## Contributing
 
