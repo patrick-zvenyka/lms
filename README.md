@@ -24,7 +24,7 @@ A simple Library Management System (LMS) built using Django to manage books, bor
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/lms.git
+   git clone https://github.com/patrick-zvenyka/lms.git
    ```
 
 2. Create and activate a virtual environment:
