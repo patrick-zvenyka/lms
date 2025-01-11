@@ -4,3 +4,6 @@ from .models import *
 admin.site.register(Book)
 admin.site.register(Student)
 admin.site.register(Borrow)
+admin.site.register(Subject)
+admin.site.register(Shelf)
+

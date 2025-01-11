@@ -20,7 +20,7 @@
               <div class="d-flex justify-content-between">
                 <div>
                   <p class="text-sm mb-0 text-capitalize">Total Books</p>
-                  <h4 class="mb-0">537</h4>
+                  <h4 class="mb-0">{{total_books}}</h4>
                 </div>
                 <div class="icon icon-md icon-shape bg-gradient-dark shadow-dark shadow text-center border-radius-lg">
                   <i class="fa-solid fa-book"></i>
@@ -36,7 +36,7 @@
               <div class="d-flex justify-content-between">
                 <div>
                   <p class="text-sm mb-0 text-capitalize">Total Users</p>
-                  <h4 class="mb-0">2300</h4>
+                  <h4 class="mb-0">{{users}}</h4>
                 </div>
                 <div class="icon icon-md icon-shape bg-gradient-dark shadow-dark shadow text-center border-radius-lg">
                   <i class="fa-solid fa-book-open-reader"></i>
@@ -52,7 +52,7 @@
               <div class="d-flex justify-content-between">
                 <div>
                   <p class="text-sm mb-0 text-capitalize">Books Borrowed</p>
-                  <h4 class="mb-0">3,462</h4>
+                  <h4 class="mb-0">{{books_borrowed}}</h4>
                 </div>
                 <div class="icon icon-md icon-shape bg-gradient-dark shadow-dark shadow text-center border-radius-lg">
                   <i class="fa-solid fa-outdent"></i>
@@ -69,7 +69,7 @@
               <div class="d-flex justify-content-between">
                 <div>
                   <p class="text-sm mb-0 text-capitalize">Total Penalty</p>
-                  <h4 class="mb-0">$103,430</h4>
+                  <h4 class="mb-0">${{penalty}}</h4>
                 </div>
                 <div class="icon icon-md icon-shape bg-gradient-dark shadow-dark shadow text-center border-radius-lg">
                   <i class="fa-solid fa-sack-dollar"></i>
@@ -88,10 +88,6 @@
               <div class="row">
                 <div class="col-lg-6 col-7">
                   <h6>Book Inventory</h6>
-                  <p class="text-sm mb-0">
-                    <i class="fa fa-check text-info" aria-hidden="true"></i>
-                    <span class="font-weight-bold ms-1">30 done</span> this month
-                  </p>
                 </div>
                
               </div>
@@ -102,26 +98,25 @@
                   <thead>
                     <tr>
                       <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-left">Subject</th>
-                      <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Class</th>
                       <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Total</th>
                     </tr>
                   </thead>
                   <tbody>
+                    {% for book in books %}
                     <tr>
                       <td class="align-middle">
                         <div class="d-flex px-2 py-1">
                           <div class="d-flex flex-column justify-content-center">
-                            <h6 class="mb-0 text-sm">English</h6>
+                            <h6 class="mb-0 text-sm">{{book.subject__name}}</h6>
                           </div>
                         </div>
                       </td>
-                      <td class="align-middle">
-                        <span class="text-xs font-weight-bold">4,000</span>
-                      </td>
+                     
                       <td class="align-middle text-center text-sm">
-                        <span class="text-xs font-weight-bold">4,000</span>
+                        <span class="text-xs font-weight-bold">{{book.subject_count}}</span>
                       </td>
                     </tr>
+                    {% endfor %}
                   </tbody>
                 </table>
               </div>              
@@ -139,16 +134,30 @@
             </div>
             <div class="card-body p-3">
               <div class="timeline timeline-one-side">
-                <div class="timeline-block mb-3">
-                  <span class="timeline-step">
-                    <i class="fa-solid fa-bell"></i>
-                  </span>
-                  <div class="timeline-content">
-                    <h6 class="text-dark text-sm font-weight-bold mb-0">$2400, Design changes</h6>
-                    <p class="text-secondary font-weight-bold text-xs mt-1 mb-0">22 DEC 7:20 PM</p>
+                  {% for book in books_statuses %}
+                  <div class="timeline-block mb-3">
+                      <span class="timeline-step">
+                          <i class="fa-solid fa-bell"></i>
+                      </span>
+                      <div class="timeline-content">
+                          <h6 class="text-dark text-sm font-weight-bold mb-0">
+                              {{ book.book_title }} - 
+                              {% if book.overdue %}
+                                  Overdue
+                              {% elif book.current_status == 'borrowed' %}
+                                  Borrowed
+                              {% elif book.current_status == 'returned' %}
+                                  Returned
+                              {% else %}
+                                  Not yet returned
+                              {% endif %}
+                          </h6>
+                          <p class="text-secondary font-weight-bold text-xs mt-1 mb-0">
+                              Due Date: {{ book.book_due_date }}
+                          </p>
+                      </div>
                   </div>
-                </div>
-                
+                  {% endfor %} 
               </div>
             </div>
           </div>
