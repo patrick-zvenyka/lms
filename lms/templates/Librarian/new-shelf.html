@@ -40,6 +40,13 @@
                             </div>
                         </form>
                     </div>
+                    <div class="card-footer">
+                        {% if auth_message %}
+                            {% for message in auth_message %}
+                                <span>{{ message }}</span>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>

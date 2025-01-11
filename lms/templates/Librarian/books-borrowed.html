@@ -111,23 +111,32 @@
             </div>
             <div class="card-footer">
               <nav aria-label="Page navigation example">
-                  <ul class="pagination justify-content-center">
-                      {% if borrows.has_previous %}
-                      <li class="page-item">
-                          <a class="page-link" href="?page=1">&laquo; first</a>
-                          <a class="page-link" href="?page={{ borrows.previous_page_number }}">Back</a>
-                      </li>
-                      {% endif %}
-                      <li class="page-item"><span>{{ borrows.number }}/{{ borrows.paginator.num_pages }}.</span></li>
-                      
-                      {% if borrows.has_next %}
-                      <li class="page-item">
-                          <a class="page-link" href="?page={{ borrows.next_page_number }}">Next</a>
-                          <a class="page-link" href="?page={{ borrows.paginator.num_pages }}">last &raquo;</a>
-                      </li>
-                      {% endif %}
-                  </ul>
-              </nav>
+                <ul class="pagination justify-content-center">
+                    <!-- Display current page number -->
+                    {% if borrows.has_previous %}
+                        <li class="page-item">
+                            <a class="btn btn-sm btn-info mx-2" href="?page=1">&laquo; First</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="btn btn-sm btn-info mx-2" href="?page={{ borrows.previous_page_number }}">Back</a>
+                        </li>
+                    {% endif %}
+            
+                    <!-- Display current page number (optional) -->
+                    <li class="page-item disabled">
+                        <span class="page-link">{{ borrows.number }} / {{ borrows.paginator.num_pages }}</span>
+                    </li>
+            
+                    {% if borrows.has_next %}
+                        <li class="page-item">
+                            <a class="btn btn-sm btn-info mx-2" href="?page={{ borrows.next_page_number }}">Next</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="btn btn-sm btn-info mx-2" href="?page={{ borrows.paginator.num_pages }}">Last &raquo;</a>
+                        </li>
+                    {% endif %}
+                </ul>
+              </nav>   
             </div>
           </div>
         </div>

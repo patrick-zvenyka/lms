@@ -121,7 +121,7 @@ def NewShelf(request):
             # Save the new shelf
             Shelf.objects.create(name=name, capacity=int(capacity))
             messages.success(request, "New shelf added successfully!")
-            return redirect('shelves')  # Replace 'shelf-list' with the name of your shelf list URL pattern
+            return redirect('new-shelf')  # Replace 'shelf-list' with the name of your shelf list URL pattern
        
     context = {
         'title':'New Shelf'
@@ -281,7 +281,7 @@ def Books(request):
     subject_id = request.GET.get('subject', '').strip()
 
     # Base queryset
-    books = Book.objects.all()
+    books = Book.objects.all().order_by('subject__name')
 
     # Apply filters
     if q:
@@ -365,7 +365,7 @@ def NewBook(request):
 
             messages.success(request, f"Book '{title}' added successfully!")
 
-            return redirect('lib-book-list')  # Redirect to a list of books page (you may adjust this as needed)
+            return redirect('lib-new-book')  # Redirect to a list of books page (you may adjust this as needed)
 
         except Shelf.DoesNotExist:
             messages.error(request, "Invalid shelf selected!")

@@ -82,8 +82,8 @@
                             <span>{{book.isbn}}</span>
                           </div>
                         </td>
-                        <td>{{book.title}}</td>
-                        <td class="text-center">{{book.subject}}</td>
+                        <td>{{book.title|truncatewords:5}}</td>
+                        <td class="text-center">{{ book.subject}}</td>
                         <td class="text-center">{{book.shelf.name}}</td>
                         <td class="text-center">
                           {% if book.is_borrowed %}
@@ -113,23 +113,32 @@
             </div>
             <div class="card-footer">
               <nav aria-label="Page navigation example">
-                  <ul class="pagination justify-content-center">
-                      {% if books.has_previous %}
-                      <li class="page-item">
-                          <a class="page-link" href="?page=1">&laquo; first</a>
-                          <a class="page-link" href="?page={{ books.previous_page_number }}">Back</a>
-                      </li>
-                      {% endif %}
-                      <li class="page-item"><span>{{ books.number }}/{{ books.paginator.num_pages }}.</span></li>
-                      
-                      {% if books.has_next %}
-                      <li class="page-item">
-                          <a class="page-link" href="?page={{ books.next_page_number }}">Next</a>
-                          <a class="page-link" href="?page={{ books.paginator.num_pages }}">last &raquo;</a>
-                      </li>
-                      {% endif %}
-                  </ul>
-              </nav>
+                <ul class="pagination justify-content-center">
+                    <!-- Display current page number -->
+                    {% if books.has_previous %}
+                        <li class="page-item">
+                            <a class="btn btn-sm btn-info mx-2" href="?page=1">&laquo; First</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="btn btn-sm btn-info mx-2" href="?page={{ books.previous_page_number }}">Back</a>
+                        </li>
+                    {% endif %}
+            
+                    <!-- Display current page number (optional) -->
+                    <li class="page-item disabled">
+                        <span class="page-link">{{ books.number }} / {{ books.paginator.num_pages }}</span>
+                    </li>
+            
+                    {% if books.has_next %}
+                        <li class="page-item">
+                            <a class="btn btn-sm btn-info mx-2" href="?page={{ books.next_page_number }}">Next</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="btn btn-sm btn-info mx-2" href="?page={{ books.paginator.num_pages }}">Last &raquo;</a>
+                        </li>
+                    {% endif %}
+                </ul>
+              </nav>            
           </div>
           </div>
         </div>

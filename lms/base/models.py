@@ -2,13 +2,13 @@ from django.db import models
 from datetime import timedelta, date
 
 class Subject(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200, unique=True)
 
     def __str__(self):
         return self.name
     
 class Shelf(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200, unique=True)
     capacity = models.IntegerField()
 
     def __str__(self):

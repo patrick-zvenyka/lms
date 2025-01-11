@@ -97,24 +97,33 @@
               
             </div>
             <div class="card-footer">
-                <nav aria-label="Page navigation example">
-                    <ul class="pagination justify-content-center">
-                        {% if shelves.has_previous %}
+              <nav aria-label="Page navigation example">
+                <ul class="pagination justify-content-center">
+                    <!-- Display current page number -->
+                    {% if shelves.has_previous %}
                         <li class="page-item">
-                            <a class="page-link" href="?page=1">&laquo; first</a>
-                            <a class="page-link" href="?page={{ shelves.previous_page_number }}">Back</a>
+                            <a class="btn btn-sm btn-info mx-2" href="?page=1">&laquo; First</a>
                         </li>
-                        {% endif %}
-                        <li class="page-item"><span>{{ shelves.number }}/{{ shelves.paginator.num_pages }}.</span></li>
-                        
-                        {% if shelves.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ shelves.next_page_number }}">Next</a>
-                            <a class="page-link" href="?page={{ shelves.paginator.num_pages }}">last &raquo;</a>
+                            <a class="btn btn-sm btn-info mx-2" href="?page={{ shelves.previous_page_number }}">Back</a>
                         </li>
-                        {% endif %}
-                    </ul>
-                </nav>
+                    {% endif %}
+            
+                    <!-- Display current page number (optional) -->
+                    <li class="page-item disabled">
+                        <span class="page-link">{{ shelves.number }} / {{ shelves.paginator.num_pages }}</span>
+                    </li>
+            
+                    {% if shelves.has_next %}
+                        <li class="page-item">
+                            <a class="btn btn-sm btn-info mx-2" href="?page={{ shelves.next_page_number }}">Next</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="btn btn-sm btn-info mx-2" href="?page={{ shelves.paginator.num_pages }}">Last &raquo;</a>
+                        </li>
+                    {% endif %}
+                </ul>
+              </nav>   
             </div>
           </div>
         </div>
