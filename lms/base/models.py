@@ -1,6 +1,6 @@
 from django.db import models
 from datetime import timedelta, date
-
+from decimal import Decimal
 class Subject(models.Model):
     name = models.CharField(max_length=200, unique=True)
 
@@ -74,9 +74,34 @@ class Student(models.Model):
     phone = models.CharField(max_length=15)
     created_at = models.DateField(auto_now_add=True)
 
-
+    def total_fines(self):
+        """
+        Calculates the total fines from all borrow records, regardless of the return status.
+        """
+        total = sum(borrow.fine for borrow in self.borrows.all())
+        return round(total, 2)
+    
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+
+
+    
+class Fine(models.Model):
+    STATUS_CHOICES = [
+        ('unpaid', 'Unpaid'),
+        ('paid', 'Paid'),
+    ]
+    
+    borrow = models.ForeignKey('Borrow', on_delete=models.CASCADE, related_name='fines')
+    amount = models.DecimalField(max_digits=6, decimal_places=2)
+    reason = models.CharField(max_length=255, help_text="Reason for the fine (e.g., overdue, lost book, damaged book).")
+    status = models.CharField(max_length=6, choices=STATUS_CHOICES, default='unpaid')
+    created_at = models.DateField(auto_now_add=True)
+    paid_at = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Fine for {self.borrow.book.title} - {self.amount} ({self.status})"
+
 
 class Borrow(models.Model):
     STATUS_CHOICES = [
@@ -86,62 +111,54 @@ class Borrow(models.Model):
         ('damaged', 'Damaged'),
     ]
 
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="borrows")
-    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name="borrows")
+    student = models.ForeignKey('Student', on_delete=models.CASCADE, related_name="borrows")
+    book = models.ForeignKey('Book', on_delete=models.CASCADE, related_name="borrows")
     borrow_date = models.DateField(auto_now_add=True)
     due_date = models.DateField(null=True, blank=True)
     return_date = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='borrowed')
-    fine = models.DecimalField(max_digits=6, decimal_places=2, default=0.00)
-    delayed_days = models.IntegerField(default=0, null=True, blank=True)
-    updated_at = models.DateField(auto_now_add=True)
+    updated_at = models.DateField(auto_now=True)
 
-    def calculate_fine(self, fine_per_day=0.50):
-        """Calculate overdue fine if the book is not returned by the due date."""
-        if self.status == 'borrowed' and date.today() > self.due_date:
-            overdue_days = (date.today() - self.due_date).days
-            return round(overdue_days * fine_per_day, 2)
-        return self.fine
+    def calculate_fine(self):
+        """Calculate fines based on the status of the borrow."""
+        if self.status == 'returned' and self.return_date and self.due_date:
+            # Fine for late return
+            overdue_days = (self.return_date - self.due_date).days
+            if overdue_days > 0:
+                return Decimal(overdue_days) * Decimal('0.50'), f"Overdue by {overdue_days} days"
+        
+        elif self.status == 'lost':
+            # Fine for lost book
+            return Decimal(self.book.price), "Book lost"
+        
+        elif self.status == 'damaged':
+            # Fine for damaged book
+            return Decimal(self.book.price) * Decimal('0.5'), "Book damaged (50% of book price)"
 
-    def calculate_due_date(self):
-        """Calculate the due date based on the borrow date."""
-        return self.borrow_date + timedelta(days=14)
-
-    def calculate_delayed_days(self):
-        """Calculate days overdue if the book has been returned."""
-        if self.status == 'returned' and self.return_date:
-            delay = (self.return_date - self.due_date).days
-            return delay if delay > 0 else 0
-        return self.delayed_days
-
-    def calculate_lost_or_damaged_fee(self):
-        """
-        Calculate the fee for lost or damaged books based on the book's price.
-        This can be used for 'lost' or 'damaged' statuses.
-        """
-        if self.status in ['lost', 'damaged']:
-            return self.book.price
-        return 0.00  # No fee if the book is not lost or damaged
+        return Decimal('0.00'), None  # No fine applicable
+    
+    @property
+    def fine(self):
+        fine_amount, _ = self.calculate_fine()  # Use your existing `calculate_fine` method
+        return fine_amount
 
     def save(self, *args, **kwargs):
-        # Set due_date if it's not already set
+        # Set the due date if not already set
         if not self.due_date:
-            self.due_date = self.calculate_due_date()
+            self.due_date = self.borrow_date + timedelta(days=14)
 
-        # Calculate delayed days if book is returned
-        if self.status == 'returned' and self.return_date:
-            self.delayed_days = self.calculate_delayed_days()
-            if self.delayed_days > 0:
-                self.fine = round(self.delayed_days * 0.50, 2)
+        # Calculate and add fines when the status changes
+        fine_amount, reason = self.calculate_fine()
+        if fine_amount > 0 and reason:
+            # Create a fine record if it doesn't already exist for this reason
+            Fine.objects.get_or_create(
+                borrow=self,
+                amount=fine_amount,
+                reason=reason,
+                defaults={'status': 'unpaid'}
+            )
 
-        # If book is lost or damaged, set the fine to the book's price
-        if self.status in ['lost', 'damaged']:
-            self.fine = self.calculate_lost_or_damaged_fee()
-
-        # If book is still borrowed, calculate fine based on the current date
-        if self.status == 'borrowed' and date.today() > self.due_date:
-            self.fine = self.calculate_fine()
-
+        # Save the changes to the Borrow record
         super().save(*args, **kwargs)
 
     def __str__(self):

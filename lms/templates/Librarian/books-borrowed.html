@@ -95,13 +95,14 @@
                             <span class="badge bg-warning text-white">Pending</span>
                           {% endif %}
                         </td>
-                        <td class="text-center">${{ borrow.fine }}</td>
+                        <td class="text-center">${{ borrow.fine|floatformat:2 }}</td>
+                  
                         <td class="text-center">
+                          <a href="{% url 'lib-return-book-with-fine' borrow.id %}" class="btn btn-sm btn-info">Add Fine</a>
                           {% if borrow.status == 'borrowed' %}
-                            <a href="{% url 'lib-return-book' borrow.id %}" class="btn btn-sm btn-success">Return</a>
-                          {% else %}
-                            <span class="btn btn-sm btn-secondary disabled">Returned</span>
+                          <a href="{% url 'lib-return-book' borrow.id %}" class="btn btn-sm btn-primary" title="Return this borrowed book">Return</a>
                           {% endif %}
+                          <a href="{% url 'billing_pdf' borrow.id %}" class="btn btn-sm btn-secondary">Print</a>
                         </td>
                       </tr>
                     {% endfor %}

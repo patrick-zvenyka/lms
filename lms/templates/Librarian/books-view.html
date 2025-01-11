@@ -41,7 +41,7 @@
                                         <th scope="col" class="text-center">Borrow Date</th>
                                         <th scope="col" class="text-center">Return Date</th>
                                         <th scope="col" class="text-center">Condition</th>
-                                        <th scope="col" class="text-center">Fine</th>
+                                        
                                     </tr>
                                 </thead>
                                 {% if book_history %}
@@ -52,7 +52,6 @@
                                         <td class="text-center">{{ record.borrow_date }}</td>
                                         <td class="text-center">{{ record.return_date }}</td>
                                         <td class="text-center">{{ record.status }}</td>
-                                        <td class="text-center">{{ record.fine }}</td>
                                     </tr>
                                     {% endfor %}
 

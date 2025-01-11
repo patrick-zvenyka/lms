@@ -12,6 +12,7 @@ urlpatterns = [
     path('borrowing',NewBorrow, name='lib-borrow'),
     path('books/borrowed',BorrowedBooks, name='lib-books-borrowed'),
     path('return-book/<int:borrow_id>/', ReturnBook, name='lib-return-book'),
+    path('return-book/fine/<int:borrow_id>/', ReturnBookWithFine, name='lib-return-book-with-fine'),
     path('shelves', Shelves, name='shelves'),
     path('shelves/new', NewShelf, name='new-shelf'),
     path('shelves/edit/<int:shelf_id>/', EditShelf, name='edit-shelf'),

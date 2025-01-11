@@ -14,10 +14,11 @@ from django.shortcuts import get_object_or_404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
-from .forms import ProfilePasswordChangeForm
+from .forms import *
 from weasyprint import HTML
 from django.http import HttpResponse
 from django.template.loader import render_to_string
+from django.utils.timezone import now
 # Create your views here.
 def Login(request):
     if request.method == "POST":
@@ -45,7 +46,7 @@ def Dashboard(request):
     total_books = Book.objects.all().count()
     total_users = Student.objects.all().count()
     total_books_borrowed = Borrow.objects.filter(status='borrowed').count()
-    total_penalty = Borrow.objects.aggregate(total_fine=Sum('fine'))['total_fine'] or 0
+    total_penalty = Fine.objects.aggregate(total_fine=Sum('amount'))['total_fine'] or 0
 
     books = Book.objects.values('subject__name').annotate(subject_count=Count('subject'))
    # Fetch books and their statuses
@@ -247,7 +248,6 @@ def BorrowedBooks(request):
     record = Borrow.objects.filter(
         Q(student__student_id__icontains=q) &
         (Q(book__subject__name__icontains=subject_query) if subject_query else Q()),
-        status='borrowed'
     ).order_by('return_date')
 
     # Set up pagination with 10 items per page
@@ -279,6 +279,41 @@ def ReturnBook(request, borrow_id):
         messages.error(request, 'This book has already been returned.')
 
     return redirect('lib-books-borrowed')  # Adjust to your appropriate URL pattern
+
+
+@login_required(login_url='lib-login')
+def ReturnBookWithFine(request, borrow_id):
+    borrow = get_object_or_404(Borrow, id=borrow_id)
+    fine_form = FineSelectionForm(request.POST or None)
+
+    # Check if the book is borrowed or already returned
+    if borrow.status == 'returned':
+        messages.error(request, 'This book has already been returned.')
+        return redirect('lib-books-borrowed')
+
+    if request.method == 'POST' and fine_form.is_valid():
+        fine_type = fine_form.cleaned_data['fine_type']
+        if fine_type == 'overdue':
+            borrow.fine = borrow.calculate_fine()
+        elif fine_type == 'lost':
+            borrow.fine = borrow.calculate_lost_or_damaged_fee()
+        elif fine_type == 'damaged':
+            borrow.fine = borrow.calculate_lost_or_damaged_fee()
+
+        print(f"Fine before save: {borrow.fine}")  # Debugging line
+        borrow.status = 'returned'
+        borrow.return_date = date.today()
+        borrow.save()
+
+        print(f"Fine after save: {borrow.fine}")  # Debugging line
+        messages.success(request, f'Book has been returned and {fine_type} fine applied successfully.')
+        return redirect('lib-books-borrowed')
+
+
+    return render(request, 'Librarian/return_book.html', {
+        'borrow': borrow,
+        'fine_form': fine_form,
+    })
 
 @login_required(login_url='lib-login')
 def Books(request):
@@ -469,18 +504,14 @@ def DeleteBook(request, book_id):
     return render(request, 'Librarian/confirm-delete-book.html', context)
 
 
-
-
-
 @login_required(login_url='lib-login')
 def Billing(request):
-    
     # Get search query for student_id and filter query for status
     student_id_query = request.GET.get('student_id', '')
     status_query = request.GET.get('status', '')
 
-    # Start with all borrowed or returned books with fines greater than 0
-    books = Borrow.objects.filter(fine__gt=0, status__in=['borrowed', 'returned','lost','damaged'])
+    # Start with all borrowed, returned, lost, or damaged books with fines greater than 0
+    books = Borrow.objects.filter(fine__gt=0, status__in=['borrowed', 'returned', 'lost', 'damaged'])
 
     # Apply search filter for student_id if provided
     if student_id_query:
@@ -503,25 +534,33 @@ def Billing(request):
     }
     return render(request, 'Librarian/billing.html', context)
 
+
 def billing_pdf(request, student_id):
     # Fetch the student's borrowed books and fines
     student = get_object_or_404(Student, pk=student_id)
     borrowed_books = Borrow.objects.filter(student=student)
-    
+    subtotal = sum(borrow.fine for borrow in borrowed_books)
+
+     # System name
+    system_name = "Library Management System"
+
     # Prepare the context for rendering the PDF template
     context = {
         'borrowed_books': borrowed_books,
         'student': student,
+        'subtotal': subtotal,
+        'system_name':system_name,
+        'now': now(),
     }
-    
+
     # Render the HTML template to a string
     html_content = render_to_string('Librarian/billing_pdf.html', context)
-    
+
     # Generate PDF from HTML
     pdf_file = HTML(string=html_content).write_pdf()
 
     # Return the PDF response
     response = HttpResponse(pdf_file, content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="billing_{student.id}.pdf"'
-    
+    response['Content-Disposition'] = f'attachment; filename="billing_{student.student_id}.pdf"'
+
     return response
