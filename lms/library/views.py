@@ -280,7 +280,6 @@ def ReturnBook(request, borrow_id):
 
     return redirect('lib-books-borrowed')  # Adjust to your appropriate URL pattern
 
-
 @login_required(login_url='lib-login')
 def ReturnBookWithFine(request, borrow_id):
     borrow = get_object_or_404(Borrow, id=borrow_id)
@@ -293,27 +292,55 @@ def ReturnBookWithFine(request, borrow_id):
 
     if request.method == 'POST' and fine_form.is_valid():
         fine_type = fine_form.cleaned_data['fine_type']
-        if fine_type == 'overdue':
-            borrow.fine = borrow.calculate_fine()
-        elif fine_type == 'lost':
-            borrow.fine = borrow.calculate_lost_or_damaged_fee()
-        elif fine_type == 'damaged':
-            borrow.fine = borrow.calculate_lost_or_damaged_fee()
 
-        print(f"Fine before save: {borrow.fine}")  # Debugging line
-        borrow.status = 'returned'
-        borrow.return_date = date.today()
+        # Calculate the fine based on the borrow status
+        fine_amount, fine_reason = borrow.calculate_fine()
+
+        # Ensure a valid reason is provided
+        if not fine_reason:
+            fine_reason = "No reason specified"
+
+        # Update the borrow status and return date based on the fine type
+        if fine_type == 'overdue':
+            borrow.status = 'returned'
+            borrow.return_date = date.today()
+        
+        elif fine_type == 'lost':
+            borrow.status = 'lost'
+            borrow.return_date = date.today()
+
+        elif fine_type == 'damaged':
+            borrow.status = 'damaged'
+            borrow.return_date = date.today()
+
+        # Save the borrow object with updated status and return date
         borrow.save()
 
-        print(f"Fine after save: {borrow.fine}")  # Debugging line
+        # Check if a fine record exists for the borrow
+        fine = Fine.objects.filter(borrow=borrow, reason=fine_reason).first()
+
+        if fine:
+            # Update the fine amount and status if the fine already exists
+            fine.amount = fine_amount
+            fine.status = 'unpaid'  # Mark the fine as unpaid when updating
+            fine.save()
+        else:
+            # If no fine exists, create a new one
+            Fine.objects.create(
+                borrow=borrow,
+                amount=fine_amount,
+                reason=fine_reason,
+                status='unpaid'
+            )
+
         messages.success(request, f'Book has been returned and {fine_type} fine applied successfully.')
         return redirect('lib-books-borrowed')
-
 
     return render(request, 'Librarian/return_book.html', {
         'borrow': borrow,
         'fine_form': fine_form,
     })
+
 
 @login_required(login_url='lib-login')
 def Books(request):
@@ -390,9 +417,10 @@ def NewBook(request):
         subject_id = request.POST.get('subject')
         shelf_id = request.POST.get('shelf')
         form = request.POST.get('form')
+        price = request.POST.get('price')
 
         # Validate inputs
-        if not isbn or not title or not subject_id or not shelf_id or not form:
+        if not isbn or not title or not subject_id or not shelf_id or not form or not price:
             messages.error(request, "All fields are required!")
             return redirect('lib-new-book')  # Redirect back to the same page
 
@@ -401,7 +429,7 @@ def NewBook(request):
             shelf = Shelf.objects.get(id=shelf_id)
 
             # Check if the shelf is full through the model's save method
-            book = Book(isbn=isbn, title=title, subject=subject, shelf=shelf, form=form)
+            book = Book(isbn=isbn, title=title, subject=subject, shelf=shelf, form=form, price=price)
             book.save()  # This will trigger the save method which checks shelf capacity
 
             messages.success(request, f"Book '{title}' added successfully!")

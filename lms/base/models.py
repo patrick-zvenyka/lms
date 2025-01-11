@@ -93,22 +93,7 @@ class Student(models.Model):
         return f"{self.first_name} {self.last_name}"
 
 
-    
-class Fine(models.Model):
-    STATUS_CHOICES = [
-        ('unpaid', 'Unpaid'),
-        ('paid', 'Paid'),
-    ]
-    
-    borrow = models.ForeignKey('Borrow', on_delete=models.CASCADE, related_name='fines')
-    amount = models.DecimalField(max_digits=6, decimal_places=2)
-    reason = models.CharField(max_length=255, help_text="Reason for the fine (e.g., overdue, lost book, damaged book).")
-    status = models.CharField(max_length=6, choices=STATUS_CHOICES, default='unpaid')
-    created_at = models.DateField(auto_now_add=True)
-    paid_at = models.DateField(null=True, blank=True)
 
-    def __str__(self):
-        return f"Fine for {self.borrow.book.title} - {self.amount} ({self.status})"
 
 
 class Borrow(models.Model):
@@ -129,25 +114,32 @@ class Borrow(models.Model):
 
     def calculate_fine(self):
         """Calculate fines based on the status of the borrow."""
+        print(f"Calculating fine for borrow with status {self.status}")
+
         if self.status == 'returned' and self.return_date and self.due_date:
             # Fine for late return
             overdue_days = (self.return_date - self.due_date).days
             if overdue_days > 0:
+                print(f"Overdue by {overdue_days} days")
                 return Decimal(overdue_days) * Decimal('0.50'), f"Overdue by {overdue_days} days"
+            return Decimal('0.00'), None  # No fine if returned on time
         
         elif self.status == 'lost':
             # Fine for lost book
+            print("Book lost")
             return Decimal(self.book.price), "Book lost"
         
         elif self.status == 'damaged':
             # Fine for damaged book
+            print("Book damaged")
             return Decimal(self.book.price) * Decimal('0.5'), "Book damaged (50% of book price)"
 
-        return Decimal('0.00'), None  # No fine applicable
-    
+        print("No fine")
+        return Decimal('0.00'), None  # No fine if no condition met
+
     @property
     def fine(self):
-        fine_amount, _ = self.calculate_fine()  # Use your existing `calculate_fine` method
+        fine_amount, _ = self.calculate_fine()  # Use the existing `calculate_fine` method
         return fine_amount
 
     def save(self, *args, **kwargs):
@@ -155,19 +147,40 @@ class Borrow(models.Model):
         if not self.due_date:
             self.due_date = self.borrow_date + timedelta(days=14)
 
-        # Calculate and add fines when the status changes
+        # Calculate the fine amount and reason
         fine_amount, reason = self.calculate_fine()
+
+        # Only create or update a fine record if the fine amount is greater than zero
         if fine_amount > 0 and reason:
-            # Create a fine record if it doesn't already exist for this reason
-            Fine.objects.get_or_create(
+            fine, created = Fine.objects.update_or_create(
                 borrow=self,
-                amount=fine_amount,
-                reason=reason,
-                defaults={'status': 'unpaid'}
+                defaults={'amount': fine_amount, 'reason': reason, 'status': 'unpaid'}
             )
+
+            # If the fine record was created, it means it's a new fine
+            if created:
+                print(f"New fine created: {fine}")
+            else:
+                print(f"Fine updated: {fine}")
 
         # Save the changes to the Borrow record
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.student} borrowed {self.book}"
+
+class Fine(models.Model):
+    STATUS_CHOICES = [
+        ('unpaid', 'Unpaid'),
+        ('paid', 'Paid'),
+    ]
+    
+    borrow = models.ForeignKey('Borrow', on_delete=models.CASCADE, related_name='fines')
+    amount = models.DecimalField(max_digits=6, decimal_places=2)
+    reason = models.CharField(max_length=255, help_text="Reason for the fine (e.g., overdue, lost book, damaged book).")
+    status = models.CharField(max_length=6, choices=STATUS_CHOICES, default='unpaid')
+    created_at = models.DateField(auto_now_add=True)
+    paid_at = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Fine for {self.borrow.book.title} - {self.amount} ({self.status})"
