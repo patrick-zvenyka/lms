@@ -42,6 +42,24 @@ def Books(request):
     }
     return render(request, 'Librarian/books-list.html', context)
 
+@login_required(login_url='li-login')
+def BookHistory(request):
+    
+
+    context = {
+        'title' : 'Book History'
+    }
+    return render(request, 'Librarian/books-view.html', context)
+
+
+@login_required(login_url='lib-login')
+def NewBook(request):
+
+    context = {
+        'title':'New Book'
+    }
+    return render(request, 'Librarian/books-new.html', context)
+
 @login_required(login_url='lib-login')
 def Billing(request):
     

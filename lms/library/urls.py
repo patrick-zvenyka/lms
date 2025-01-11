@@ -5,5 +5,7 @@ urlpatterns = [
     path('librarian/logout/', Logout, name='logout'),
     path('home', Dashboard, name='lib-dashboard'),
     path('books', Books, name='lib-book-list'),
+    path('books/history', BookHistory, name='lib-book-view'),
+    path('books/new', NewBook, name='lib-new-book'),
     path('billing', Billing, name='lib-billing'),
 ]

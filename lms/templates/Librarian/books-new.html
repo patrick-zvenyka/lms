@@ -1,0 +1,95 @@
+{% extends 'Librarian/components/main.html' %}
+
+{% block content %}
+{% include 'Librarian/components/sidebar.html' %}
+<main class="main-content position-relative max-height-vh-100 h-100 border-radius-lg ">
+    <!-- Navbar -->
+    {% include 'Librarian/components/navbar.html' %}
+    <!-- End Navbar -->
+    <div class="container-fluid py-2">
+        <div class="row">
+            <div class="col-12">
+                <div class="card mt-4">
+                    <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+                        <div class="bg-gradient-dark shadow-dark border-radius-lg pt-4 pb-3">
+                            <h6 class="text-white text-capitalize ps-3">Add New Book</h6>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" enctype="multipart/form-data" action="">
+                            {% csrf_token %}
+                            <div class="row">
+                                <!-- Book Name -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="bookName" class="form-label">Book Name</label>
+                                    <input type="text" id="bookName" name="name" class="form-control" placeholder="Enter book name" required>
+                                </div>
+
+                                <!-- Book ID -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="bookID" class="form-label">Book ID</label>
+                                    <input type="text" id="bookID" name="book_id" class="form-control" placeholder="Enter unique book ID" required>
+                                </div>
+
+                                <!-- Subject -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="subject" class="form-label">Subject</label>
+                                    <select id="subject" name="subject" class="form-select" required>
+                                        <option value="" selected>Select a subject</option>
+                                        <option value="Fiction">Fiction</option>
+                                        <option value="Science">Science</option>
+                                        <option value="Math">Math</option>
+                                        <option value="History">History</option>
+                                        <option value="Literature">Literature</option>
+                                    </select>
+                                </div>
+
+                                <!-- Book Condition -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="condition" class="form-label">Condition</label>
+                                    <select id="condition" name="condition" class="form-select" required>
+                                        <option value="New">New</option>
+                                        <option value="Good">Good</option>
+                                        <option value="Fair">Fair</option>
+                                        <option value="Poor">Poor</option>
+                                    </select>
+                                </div>
+
+                                <!-- Class -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="class" class="form-label">Class</label>
+                                    <select id="class" name="class" class="form-select">
+                                        <option value="" selected>None</option>
+                                        <option value="10A">10A</option>
+                                        <option value="9B">9B</option>
+                                        <option value="11C">11C</option>
+                                    </select>
+                                </div>
+
+                                <!-- Book Image -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="condition" class="form-label">Shelf</label>
+                                    <select id="condition" name="condition" class="form-select" required>
+                                        <option value="New">1</option>
+                                        <option value="Good">2</option>
+                                        <option value="Fair">3</option>
+                                        <option value="Poor">4</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-sm btn-primary">
+                                     Save Book
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% include 'Librarian/components/footer.html' %}
+    </div>
+</main>
+{% endblock %}
