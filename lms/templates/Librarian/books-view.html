@@ -16,11 +16,9 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <p>Book Name: <strong>Harry Potter</strong></p>
-                        <p>Book ID: <strong>BK12345</strong></p>
-                        <p>Subject: <strong>Fiction</strong></p>
-                        <p>Current Status: <span class="badge bg-success text-white">Available</span></p>
-                        <p>Current Condition: <strong>Good</strong></p>
+                        <p>Book Name: <strong>{{book.title}}</strong></p>
+                        <p>ISBN: <strong>{{book.isbn}}</strong></p>
+                        <p>Subject: <strong>{{book.subject}}</strong></p>
                     </div>
                 </div>
             </div>
@@ -40,7 +38,6 @@
                                 <thead class="thead-dark">
                                     <tr>
                                         <th scope="col">Borrowed By</th>
-                                        <th scope="col" class="text-center">Class</th>
                                         <th scope="col" class="text-center">Borrow Date</th>
                                         <th scope="col" class="text-center">Return Date</th>
                                         <th scope="col" class="text-center">Condition</th>
@@ -48,32 +45,30 @@
                                         <th scope="col" class="text-center">Fine Status</th>
                                     </tr>
                                 </thead>
+                                {% if book_history %}
                                 <tbody>
+                                    {% for record in book_history %}
                                     <tr>
-                                        <td>John Doe</td>
-                                        <td class="text-center">10A</td>
-                                        <td class="text-center">2024-01-10</td>
-                                        <td class="text-center">2024-01-20</td>
-                                        <td class="text-center">Good</td>
+                                        <td>{{record.student.name}}</td>
+                                        <td class="text-center">{{ record.borrow_date }}</td>
+                                        <td class="text-center">{{ record.return_date }}</td>
+                                        <td class="text-center">{{ record.status }}</td>
+                                        <td class="text-center">{{ record.fine }}</td>
                                         <td class="text-center">$ 0.00</td>
                                         <td class="text-center"><span class="badge bg-success text-white">Unavailable</span></td>
                                     </tr>
-                                    <tr>
-                                        <td>Jane Smith</td>
-                                        <td class="text-center">11B</td>
-                                        <td class="text-center">2024-02-15</td>
-                                        <td class="text-center">2024-02-25</td>
-                                        <td class="text-center">Fair</td>
-                                        <td class="text-center">$ 5.00</td>
-                                        <td class="text-center"><span class="badge bg-danger text-white">Available</span></td>
-                                    </tr>
-                                    <!-- Add additional rows dynamically from the database -->
+                                    {% endfor %}
+
+                                    
                                 </tbody>
+                                {% else %}
+                                <p>No borrowing history for this book.</p>
+                                {% endif %}
                             </table>
                         </div>
                     </div>
                     <div class="card-footer">
-                        <p class="text-muted text-center mb-0">Total Borrowings: <strong>2</strong></p>
+                        <p class="text-muted text-center mb-0">Total Borrowings: <strong>{{book_history.count}}</strong></p>
                         <br>
                         <nav aria-label="Page navigation example">
                             <ul class="pagination justify-content-center">

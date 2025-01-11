@@ -192,28 +192,167 @@ def ReturnBook(request, borrow_id):
 @login_required(login_url='lib-login')
 def Books(request):
 
+    books = Book.objects.all().order_by('id')
+
+    for book in books:
+        book.is_borrowed = Borrow.objects.filter(book=book, status='borrowed').exists()
+
+    # Set up pagination with 10 items per page
+    paginator = Paginator(books, 10)  # Show 10 shelves per page
+    page_number = request.GET.get('page')  # Get the page number from the URL query parameters
+    page_obj = paginator.get_page(page_number)  # Get the page object
+
     context = {
-        'title':'Books'
+        'title':'Books',
+        'books':books,
+        'books':page_obj
     }
     return render(request, 'Librarian/books-list.html', context)
 
 @login_required(login_url='li-login')
-def BookHistory(request):
+def BookHistory(request, book_id):
+    # Get the book object by ID or raise a 404 if not found
+    book = get_object_or_404(Book, id=book_id)  # Correct the model to 'Book'
     
+    # Check if the book is borrowed
+    book.is_borrowed = Borrow.objects.filter(book=book, status='borrowed').exists()
 
+    # Fetch the history of the book (all borrow records)
+    book_history = Borrow.objects.filter(book=book).order_by('-borrow_date')  # Adjust based on your model's fields
+    
     context = {
-        'title' : 'Book History'
+        'title': 'Book History',
+        'book': book,
+        'book_history': book_history  # Pass the borrow history to the template
     }
+    
     return render(request, 'Librarian/books-view.html', context)
 
 
 @login_required(login_url='lib-login')
 def NewBook(request):
+    if request.method == 'POST':
+        isbn = request.POST.get('isbn')
+        title = request.POST.get('title')
+        subject_id = request.POST.get('subject')
+        shelf_id = request.POST.get('shelf')
+        form = request.POST.get('form')
+
+        # Validate inputs
+        if not isbn or not title or not subject_id or not shelf_id or not form:
+            messages.error(request, "All fields are required!")
+            return redirect('lib-new-book')  # Redirect back to the same page
+
+        try:
+            subject = Subject.objects.get(id=subject_id)
+            shelf = Shelf.objects.get(id=shelf_id)
+
+            # Check if the shelf is full through the model's save method
+            book = Book(isbn=isbn, title=title, subject=subject, shelf=shelf, form=form)
+            book.save()  # This will trigger the save method which checks shelf capacity
+
+            messages.success(request, f"Book '{title}' added successfully!")
+
+            return redirect('lib-book-list')  # Redirect to a list of books page (you may adjust this as needed)
+
+        except Shelf.DoesNotExist:
+            messages.error(request, "Invalid shelf selected!")
+        except Subject.DoesNotExist:
+            messages.error(request, "Invalid subject selected!")
+        except ValueError as e:
+            messages.error(request, str(e))  # Catch and display the error from the save method
+
+    # For GET request, pass shelves and subjects to the context
+    shelves = Shelf.objects.all()
+    subjects = Subject.objects.all()
 
     context = {
-        'title':'New Book'
+        'title': 'New Book',
+        'shelves': shelves,
+        'subjects': subjects,
+        'book_form_choices': Book.BOOK_FORM_CHOICES,  # Pass the form choices here
     }
     return render(request, 'Librarian/books-new.html', context)
+
+
+@login_required(login_url='lib-login')
+def EditBook(request, book_id):
+    # Fetch the book object by ID or return a 404 error if not found
+    book = get_object_or_404(Book, id=book_id)
+
+    if request.method == 'POST':
+        isbn = request.POST.get('isbn')
+        title = request.POST.get('title')
+        subject_id = request.POST.get('subject')
+        shelf_id = request.POST.get('shelf')
+        form = request.POST.get('form')
+
+        # Validate inputs
+        if not isbn or not title or not subject_id or not shelf_id or not form:
+            messages.error(request, "All fields are required!")
+            return redirect('lib-edit-book', book_id=book.id)  # Redirect back to the edit page
+
+        try:
+            # Fetch the subject and shelf objects
+            subject = Subject.objects.get(id=subject_id)
+            shelf = Shelf.objects.get(id=shelf_id)
+
+            # Update the book object with the new values
+            book.isbn = isbn
+            book.title = title
+            book.subject = subject
+            book.shelf = shelf
+            book.form = form
+
+            # Check if the shelf is full through the model's save method
+            book.save()  # This will trigger the save method which checks shelf capacity
+
+            messages.success(request, f"Book '{title}' updated successfully!")
+
+            return redirect('lib-book-list')  # Redirect to the book list page after update
+
+        except Shelf.DoesNotExist:
+            messages.error(request, "Invalid shelf selected!")
+        except Subject.DoesNotExist:
+            messages.error(request, "Invalid subject selected!")
+        except ValueError as e:
+            messages.error(request, str(e))  # Catch and display the error from the save method
+
+    # For GET request, pass shelves, subjects, and the current book object to the context
+    shelves = Shelf.objects.all()
+    subjects = Subject.objects.all()
+
+    context = {
+        'title': 'Edit Book',
+        'shelves': shelves,
+        'subjects': subjects,
+        'book': book,  # Pass the book object to prepopulate the form
+        'book_form_choices': Book.BOOK_FORM_CHOICES,  # Pass the form choices here
+    }
+    return render(request, 'Librarian/books-edit.html', context)
+
+
+
+@login_required(login_url='lib-login')
+def DeleteBook(request, book_id):
+    # Get the book object by ID or raise a 404 if not found
+    book = get_object_or_404(Book, id=book_id)
+
+    # Check if the request method is POST to confirm the deletion
+    if request.method == "POST":
+        book.delete()
+        messages.success(request, "Book deleted successfully!")
+        return redirect('lib-book-list')  # Redirect to the books list page
+
+    context = {
+        'title': 'Delete Book',
+        'book': book
+    }
+    return render(request, 'Librarian/confirm-delete-book.html', context)
+
+
+
+
 
 @login_required(login_url='lib-login')
 def Billing(request):
