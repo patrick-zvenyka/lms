@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from base.models import *
+from django.db.models import Q
 from django.db.models import Sum
 from django.db.models import Count
 from datetime import date
@@ -23,9 +24,9 @@ def Login(request):
                 login(request, user)
                 return redirect('lib-dashboard')  # Redirect to dashboard
             else:
-                messages.error(request, "You do not have the required permissions to access this system.")
+                auth_message = messages.error(request, "You do not have the required permissions to access this system.")
         else:
-            messages.error(request, "Invalid username or password.")
+            auth_message = messages.error(request, "Invalid username or password.")
 
     return render(request, 'Librarian/sign-in.html')
 
@@ -51,7 +52,12 @@ def Dashboard(request):
             default=Value(False),
             output_field=BooleanField()
         )
-    ).values('book_title', 'current_status', 'book_due_date', 'overdue')
+    ).values('book_title', 'current_status', 'book_due_date', 'overdue').order_by('borrow_date')
+
+    # Set up pagination with 10 items per page
+    paginator = Paginator(books, 10)  # Show 10 shelves per page
+    page_number = request.GET.get('page')  # Get the page number from the URL query parameters
+    page_obj = paginator.get_page(page_number)  # Get the page object
     
     context = {
         'title':'Dashboard',
@@ -60,6 +66,7 @@ def Dashboard(request):
         'books_borrowed':total_books_borrowed,
         'penalty':total_penalty,
         'books':books,
+        'books': page_obj,
         'books_statuses': books_statuses,
     }
     return render(request, 'Librarian/dashboard.html', context)
@@ -67,10 +74,23 @@ def Dashboard(request):
 
 @login_required(login_url='lib-login')
 def Shelves(request):
-    shelves = Shelf.objects.annotate(
+    # Get search and filter parameters from the request
+    q = request.GET.get('q', '')  # Search by name
+    space_filter = request.GET.get('space_filter', 'all')  # Filter for available space
+
+    # Base query for shelves
+    shelves = Shelf.objects.filter(
+        Q(name__icontains=q)
+    ).annotate(
         book_count=Count('book'),
         space_left=F('capacity') - Count('book')
     )
+
+    # Apply space filter
+    if space_filter == 'available':
+        shelves = shelves.filter(space_left__gt=0)
+    elif space_filter == 'full':
+        shelves = shelves.filter(space_left__lte=0)
 
     # Set up pagination with 10 items per page
     paginator = Paginator(shelves, 10)  # Show 10 shelves per page
@@ -78,9 +98,10 @@ def Shelves(request):
     page_obj = paginator.get_page(page_number)  # Get the page object
 
     context = {
-        'title':'Shelves',
-        'shelves':shelves,
-        'shelves': page_obj,  # Pass the page object to the template
+        'title': 'Shelves',
+        'shelves': page_obj,  # Pass the paginated shelves to the template
+        'current_q': q,  # Preserve the search query in the template
+        'current_space_filter': space_filter,  # Preserve the filter value in the template
     }
     return render(request, 'Librarian/shelves.html', context)
 
@@ -153,6 +174,7 @@ def DeleteShelf(request, shelf_id):
         'shelf': shelf
     }
     return render(request, 'Librarian/confirm-delete-shelf.html', context)
+
 @login_required(login_url='lib-login')
 def NewBorrow(request):
     if request.method == 'POST':
@@ -207,20 +229,37 @@ def NewBorrow(request):
         'students': students,
         'books': books,
     }
-    return render(request, 'Librarian/borrow.html', context)
-
+    return render(request, 'Librarian/books-borrow.html', context)
 
 
 @login_required(login_url='lib-login')
 def BorrowedBooks(request):
+    q = request.GET.get('q', '').strip()
+    subject_query = request.GET.get('subject', '').strip()
 
-    record = Borrow.objects.all()
-    
+    # Filter records based on student ID and subject
+    record = Borrow.objects.filter(
+        Q(student__student_id__icontains=q) &
+        (Q(book__subject__name__icontains=subject_query) if subject_query else Q()),
+        status='borrowed'
+    ).order_by('return_date')
+
+    # Set up pagination with 10 items per page
+    paginator = Paginator(record, 10)  # Show 10 books per page
+    page_number = request.GET.get('page')  # Get the page number from the URL query parameters
+    page_obj = paginator.get_page(page_number)  # Get the page object
+
+    # Get all subjects for the filter dropdown
+    subjects = Subject.objects.all()
+    total = Borrow.objects.filter(status='borrowed').count()
     context = {
-        'title':'Borrowed Books',
-        'borrows': record
+        'title': 'Borrowed Books',
+        'borrows': page_obj,
+        'subjects': subjects,  # Pass subjects to the template
+        'total' : total
     }
     return render(request, 'Librarian/books-borrowed.html', context)
+
 
 @login_required(login_url='lib-login')
 def ReturnBook(request, borrow_id):
@@ -235,26 +274,40 @@ def ReturnBook(request, borrow_id):
 
     return redirect('lib-books-borrowed')  # Adjust to your appropriate URL pattern
 
-
 @login_required(login_url='lib-login')
 def Books(request):
+    # Get query parameters
+    q = request.GET.get('q', '').strip()
+    subject_id = request.GET.get('subject', '').strip()
 
-    books = Book.objects.all().order_by('id')
+    # Base queryset
+    books = Book.objects.all()
 
+    # Apply filters
+    if q:
+        books = books.filter(Q(title__icontains=q))
+    if subject_id:
+        books = books.filter(subject_id=subject_id)
+
+    # Annotate with borrowed status
     for book in books:
         book.is_borrowed = Borrow.objects.filter(book=book, status='borrowed').exists()
 
-    # Set up pagination with 10 items per page
-    paginator = Paginator(books, 10)  # Show 10 shelves per page
-    page_number = request.GET.get('page')  # Get the page number from the URL query parameters
-    page_obj = paginator.get_page(page_number)  # Get the page object
+    # Set up pagination
+    paginator = Paginator(books, 10)  # 10 books per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Get all subjects for the select dropdown
+    subjects = Subject.objects.all().order_by('name')
 
     context = {
-        'title':'Books',
-        'books':books,
-        'books':page_obj
+        'title': 'Books',
+        'books': page_obj,
+        'subjects': subjects,  # Pass subjects for the dropdown
     }
     return render(request, 'Librarian/books-list.html', context)
+
 
 @login_required(login_url='li-login')
 def BookHistory(request, book_id):

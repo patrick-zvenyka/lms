@@ -17,37 +17,31 @@
                       </div>
                   </div>
                 <div class="card-body p-3">
-                  <form id="filterForm">
+                  <form method="GET" action="{% url 'lib-book-list' %}" id="filterForm">
                     <div class="row">
-                      <div class="col-md-4 mb-3">
-                        <label for="filterName" class="form-label">Name</label>
-                        <input type="text" class="form-control" id="filterName" name="name" placeholder="Enter book name">
-                      </div>
-                      <div class="col-md-4 mb-3">
-                        <label for="filterClass" class="form-label">Class</label>
-                        <select class="form-select" id="filterClass" name="class">
-                          <option value="" selected>All Classes</option>
-                          <option value="10A">10A</option>
-                          <option value="9B">9B</option>
-                          <option value="11C">11C</option>
-                        </select>
-                      </div>
-                      <div class="col-md-4 mb-3">
-                        <label for="filterFineStatus" class="form-label">Fine Status</label>
-                        <select class="form-select" id="filterFineStatus" name="fine_status">
-                          <option value="" selected>All</option>
-                          <option value="none">None</option>
-                          <option value="late_return">Late Return</option>
-                          <option value="damaged_book">Damaged Book</option>
-                        </select>
-                      </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="filterTitle" class="form-label">Search Title</label>
+                            <input type="text" class="form-control" id="filterTitle" name="q" placeholder="Search by title" value="{{ request.GET.q }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="filterSubject" class="form-label">Subject</label>
+                            <select class="form-select" id="filterSubject" name="subject">
+                                <option value="" {% if not request.GET.subject %}selected{% endif %}>All Subjects</option>
+                                {% for subject in subjects %}
+                                <option value="{{ subject.id }}" {% if request.GET.subject == subject.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ subject.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
                     </div>
                     <div class="col-6 text-end">
-                      <button class="btn bg-gradient-dark mb-0" type="submit" form="filterForm">
-                        <i class="fa-brands fa-searchengin"></i> Search
-                      </button>
+                        <button class="btn bg-gradient-dark mb-0" type="submit">
+                            <i class="fa-brands fa-searchengin"></i> Search
+                        </button>
                     </div>
                   </form>
+                
                 </div>
               </div>
               </div>
