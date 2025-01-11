@@ -10,7 +10,7 @@ from django.db.models import Count
 from datetime import date
 from django.db.models import F, Value, Case, When, BooleanField
 from django.shortcuts import get_object_or_404
-from django.core.paginator import Paginator
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 # Create your views here.
 def Login(request):
     if request.method == "POST":
@@ -153,16 +153,63 @@ def DeleteShelf(request, shelf_id):
         'shelf': shelf
     }
     return render(request, 'Librarian/confirm-delete-shelf.html', context)
-
-
-
 @login_required(login_url='lib-login')
 def NewBorrow(request):
+    if request.method == 'POST':
+        student_id = request.POST.get("student_id")
+        book_isbn = request.POST.get("book_isbn")
+        due_date = request.POST.get("due_date")
+
+        # Validate inputs
+        if not student_id or not book_isbn:
+            messages.error(request, "Student and Book are required!")
+            return redirect('lib-new-borrow')
+
+        try:
+            student = Student.objects.get(id=student_id)
+            book = Book.objects.get(isbn=book_isbn)
+
+            # Check if the book is already borrowed
+            if Borrow.objects.filter(book=book, status='borrowed').exists():
+                messages.error(request, f"Book '{book.title}' is already borrowed!")
+                return redirect('lib-new-borrow')
+
+            # If due_date is not provided, calculate it
+            if not due_date:
+                due_date = date.today() + timedelta(days=14)  # Default due date is 14 days from today
+            else:
+                due_date = date.fromisoformat(due_date)  # Parse the given date string
+
+            # Create a new Borrow record
+            borrow = Borrow(
+                student=student,
+                book=book,
+                due_date=due_date
+            )
+            borrow.save()
+
+            messages.success(request, f"Book '{book.title}' borrowed successfully!")
+            return redirect('lib-book-list')  # Redirect to a list of books or other relevant page
+
+        except Student.DoesNotExist:
+            messages.error(request, "Invalid student selected!")
+        except Book.DoesNotExist:
+            messages.error(request, "Invalid book selected!")
+        except ValueError:
+            messages.error(request, "Invalid date format for due date!")
+
+    # Get all students and books that are not borrowed
+    students = Student.objects.all()
+    books = Book.objects.exclude(borrows__status='borrowed').distinct()  # Books not currently borrowed
 
     context = {
-        'title':'Borrowing'
+        'title': 'Borrowing Book',
+        'students': students,
+        'books': books,
     }
     return render(request, 'Librarian/borrow.html', context)
+
+
 
 @login_required(login_url='lib-login')
 def BorrowedBooks(request):
@@ -219,11 +266,23 @@ def BookHistory(request, book_id):
 
     # Fetch the history of the book (all borrow records)
     book_history = Borrow.objects.filter(book=book).order_by('-borrow_date')  # Adjust based on your model's fields
+
+     # Set up pagination
+    paginator = Paginator(book_history, 10)  # Show 10 borrow records per page
+    page = request.GET.get('page')  # Get the current page from the query parameter
+    try:
+        book_history_paginated = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver the first page
+        book_history_paginated = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range, deliver the last page of results
+        book_history_paginated = paginator.page(paginator.num_pages)
     
     context = {
         'title': 'Book History',
         'book': book,
-        'book_history': book_history  # Pass the borrow history to the template
+        'book_history': book_history_paginated  # Pass the borrow history to the template
     }
     
     return render(request, 'Librarian/books-view.html', context)
