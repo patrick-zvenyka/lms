@@ -19,5 +19,10 @@ urlpatterns = [
     path('shelves/delete/<int:shelf_id>/', DeleteShelf, name='delete-shelf'),
     path('billing', Billing, name='lib-billing'),
     path('billing-pdf/<int:student_id>/', billing_pdf, name='billing_pdf'),
+    path('students', Students, name='lib-student-list' ),
+    path('students/new', NewStudent, name='lib-new-student'),
+    path('students/<str:student_id>/', UpdateStudent, name='lib-update-student'),
+    path('student/<str:student_id>/', SingleStudent, name='lib-single-student'),
+    path('student/delete/<str:student_id>/', DeleteStudent, name='lib-delete-student'),
    
 ]

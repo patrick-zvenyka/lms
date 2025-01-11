@@ -564,3 +564,176 @@ def billing_pdf(request, student_id):
     response['Content-Disposition'] = f'attachment; filename="billing_{student.student_id}.pdf"'
 
     return response
+
+
+
+
+@login_required(login_url='lib-login')
+def Students(request):
+    # Get query parameters
+    q = request.GET.get('q', '').strip()
+    student_id = request.GET.get('student', '').strip()
+
+    # Base queryset
+    students = Student.objects.all().order_by('student_id')
+
+    # Apply filters
+    if q:
+        students = students.filter(Q(title__icontains=q))
+    if student_id:
+        students = students.filter(subject_id=student_id)
+
+    # Set up pagination
+    paginator = Paginator(students, 10)  # 10 students per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+
+    # Get all unique form choices from Student model
+    form_choices = Student.STUDENT_FORM_CHOICES
+
+    context = {
+        'title': 'Books',
+        'books': page_obj,
+        'students': students,  # Pass subjects for the dropdown
+        'forms':form_choices
+    }
+    return render(request, 'Librarian/students-list.html', context)
+
+
+@login_required(login_url='lib-login')
+def NewStudent(request):
+    if request.method == 'POST':
+        # Fetching data from the POST request
+        student_id = request.POST.get('student_id')
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        form = request.POST.get('form')
+        email = request.POST.get('email')
+        phone = request.POST.get('phone')
+
+        # Validate inputs: Ensure all fields are provided
+        if not student_id or not first_name or not last_name or not form or not email or not phone:
+            messages.error(request, "All fields are required!")
+            return redirect('lib-new-student')  # Redirect to the same page with an error message
+
+        try:
+            # Check if the student with the provided student_id already exists
+            existing_student = Student.objects.filter(student_id=student_id).first()
+            
+            if existing_student:
+                messages.error(request, "A student with this ID already exists.")
+                return redirect('lib-new-student')
+
+            # Create and save a new student
+            student = Student(student_id=student_id, first_name=first_name, last_name=last_name, 
+                              email=email, phone=phone, form=form)
+            student.save()  # Save the new student
+
+            messages.success(request, f"Student '{first_name} {last_name}' added successfully!")
+            return redirect('lib-new-student')  # Redirect to a page with success message
+
+        except Exception as e:
+            messages.error(request, f"Error saving student: {str(e)}")  # Catch any errors and display them
+
+    # For GET request, show the form to create a new student
+    context = {
+        'title': 'New Student',
+        'student_form_choices': Student.STUDENT_FORM_CHOICES,  # Pass form choices here if needed
+    }
+    return render(request, 'Librarian/students-new.html', context)
+
+
+@login_required(login_url='lib-login')
+def UpdateStudent(request, student_id):
+    # Fetch the student object based on the student_id
+    try:
+        student = Student.objects.get(student_id=student_id)
+    except Student.DoesNotExist:
+        messages.error(request, "Student not found.")
+        return redirect('lib-student-list')  # Redirect to the student list if the student doesn't exist
+
+    if request.method == 'POST':
+        # Fetching updated data from the POST request
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        form = request.POST.get('form')
+        email = request.POST.get('email')
+        phone = request.POST.get('phone')
+
+        # Validate inputs: Ensure all fields are provided
+        if not first_name or not last_name or not form or not email or not phone:
+            messages.error(request, "All fields are required!")
+            return redirect('lib-update-student', student_id=student_id)  # Redirect back to the update page
+
+        try:
+            # Update the student's data
+            student.first_name = first_name
+            student.last_name = last_name
+            student.form = form
+            student.email = email
+            student.phone = phone
+            student.save()  # Save the updated student
+
+            messages.success(request, f"Student '{first_name} {last_name}' updated successfully!")
+            return redirect('lib-student-list')  # Redirect to a student list page (you can adjust this as needed)
+
+        except Exception as e:
+            messages.error(request, f"Error updating student: {str(e)}")  # Catch and display the error
+
+    # For GET request, show the form pre-filled with the student's existing data
+    context = {
+        'title': f'Update Student - {student.first_name} {student.last_name}',
+        'student': student,  # Pass the existing student object to pre-fill the form
+        'student_form_choices': Student.STUDENT_FORM_CHOICES,  # Pass form choices here if needed
+    }
+    return render(request, 'Librarian/students-update.html', context)
+
+
+@login_required(login_url='lib-login')
+def SingleStudent(request, student_id):
+    # Fetch the student object based on the student_id
+    student = get_object_or_404(Student, student_id=student_id)
+
+    # Fetch the borrow records for this student
+    borrowed_books = Borrow.objects.filter(student=student).order_by('-borrow_date')
+
+    # Get the associated fines for each borrowed book
+    fines_history = Fine.objects.filter(borrow__student=student).order_by('-created_at')
+
+    context = {
+        'title': f'Student Profile - {student.first_name} {student.last_name}',
+        'student': student,  # Student information
+        'borrowed_books': borrowed_books,  # Borrowed books by the student
+        'fines_history': fines_history,  # Fines allocated to the student
+    }
+
+    return render(request, 'Librarian/students-view.html', context)
+
+@login_required(login_url='lib-login')
+def DeleteStudent(request, student_id):
+    # Fetch the student object based on the student_id
+    student = get_object_or_404(Student, student_id=student_id)
+
+    if request.method == 'POST':
+        try:
+            # First, delete all fines related to the student's borrowings
+            Borrow.objects.filter(student=student).delete()  # Delete all borrow records
+            Fine.objects.filter(borrow__student=student).delete()  # Delete all fines related to the student's borrowings
+
+            # Now, delete the student
+            student.delete()  # Delete the student record
+
+            messages.success(request, f"Student '{student.first_name} {student.last_name}' has been deleted successfully.")
+            return redirect('lib-student-list')  # Redirect to the student list page
+
+        except Exception as e:
+            messages.error(request, f"Error deleting student: {str(e)}")
+            return redirect('lib-student-list')
+
+    # For GET request, show the confirmation page to delete the student
+    context = {
+        'title': 'Delete Student',
+        'student': student,  # Passing the student info to confirm the deletion
+    }
+    return render(request, 'Librarian/students-delete.html', context)

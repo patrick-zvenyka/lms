@@ -1,6 +1,11 @@
 from django.db import models
 from datetime import timedelta, date
 from decimal import Decimal
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.db import models
+from django.contrib.auth.models import User
+
+
 class Subject(models.Model):
     name = models.CharField(max_length=200, unique=True)
 
@@ -66,6 +71,7 @@ class Student(models.Model):
         ('6C','6C'),
         ('6A','6A'),
     ]
+
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     student_id = models.CharField(max_length=20, unique=True)
@@ -80,6 +86,8 @@ class Student(models.Model):
         """
         total = sum(borrow.fine for borrow in self.borrows.all())
         return round(total, 2)
+    
+   
     
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
