@@ -9,6 +9,7 @@ class Subject(models.Model):
     
 class Shelf(models.Model):
     name = models.CharField(max_length=200)
+    capacity = models.IntegerField()
 
     def __str__(self):
         return self.name
@@ -28,6 +29,11 @@ class Book(models.Model):
     shelf = models.ForeignKey(Shelf, on_delete=models.CASCADE)
     form = models.CharField(max_length=1, choices=BOOK_FORM_CHOICES)  # Corrected this line
     created_at = models.DateField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if self.shelf.book_set.count() >= self.shelf.capacity:
+            raise ValueError(f"The shelf '{self.shelf.name}' is full. Please choose another shelf.")
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.title

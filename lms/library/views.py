@@ -9,6 +9,7 @@ from django.db.models import Sum
 from django.db.models import Count
 from datetime import date
 from django.db.models import F, Value, Case, When, BooleanField
+from django.shortcuts import get_object_or_404
 # Create your views here.
 def Login(request):
     if request.method == "POST":
@@ -61,6 +62,92 @@ def Dashboard(request):
         'books_statuses': books_statuses,
     }
     return render(request, 'Librarian/dashboard.html', context)
+
+
+@login_required(login_url='lib-login')
+def Shelves(request):
+    shelves = Shelf.objects.annotate(
+        book_count=Count('book'),
+        space_left=F('capacity') - Count('book')
+    )
+
+    context = {
+        'title':'Shelves',
+        'shelves':shelves
+    }
+    return render(request, 'Librarian/shelves.html', context)
+
+
+@login_required(login_url='lib-login')
+def NewShelf(request):
+    if request.method == "POST":
+        name = request.POST.get("shelf_name")  
+        capacity = request.POST.get("shelf_capacity")
+
+        # Validate inputs
+        if not name or not capacity:
+            messages.error(request, "All fields are required!")
+        elif not capacity.isdigit() or int(capacity) <= 0:
+            messages.error(request, "Capacity must be a positive number!")
+        else:
+            # Save the new shelf
+            Shelf.objects.create(name=name, capacity=int(capacity))
+            messages.success(request, "New shelf added successfully!")
+            return redirect('shelves')  # Replace 'shelf-list' with the name of your shelf list URL pattern
+       
+    context = {
+        'title':'New Shelf'
+    }
+    return render(request, 'Librarian/new-shelf.html', context)
+
+
+@login_required(login_url='lib-login')
+def EditShelf(request, shelf_id):
+    # Get the shelf object by ID or raise a 404 if not found
+    shelf = get_object_or_404(Shelf, id=shelf_id)
+    
+    if request.method == "POST":
+        name = request.POST.get("shelf_name")
+        capacity = request.POST.get("shelf_capacity")
+        
+        # Validate inputs
+        if not name or not capacity:
+            messages.error(request, "All fields are required!")
+        elif not capacity.isdigit() or int(capacity) <= 0:
+            messages.error(request, "Capacity must be a positive number!")
+        else:
+            # Update the shelf details
+            shelf.name = name
+            shelf.capacity = int(capacity)
+            shelf.save()
+            messages.success(request, "Shelf updated successfully!")
+            return redirect('shelves')  # Replace 'shelves' with your shelf list URL pattern
+    
+    context = {
+        'title': 'Edit Shelf',
+        'shelf': shelf
+    }
+    return render(request, 'Librarian/edit-shelf.html', context)
+
+
+@login_required(login_url='lib-login')
+def DeleteShelf(request, shelf_id):
+    # Get the shelf object by ID or raise a 404 if not found
+    shelf = get_object_or_404(Shelf, id=shelf_id)
+
+    # Check if the request method is POST to confirm the deletion
+    if request.method == "POST":
+        shelf.delete()
+        messages.success(request, "Shelf deleted successfully!")
+        return redirect('shelves')  # Redirect to the shelves list page
+
+    context = {
+        'title': 'Delete Shelf',
+        'shelf': shelf
+    }
+    return render(request, 'Librarian/confirm-delete-shelf.html', context)
+
+
 
 @login_required(login_url='lib-login')
 def NewBorrow(request):
