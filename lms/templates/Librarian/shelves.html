@@ -86,7 +86,7 @@
                                 <td class="text-center">{{ shelf.space_left }}</td>
                                 <td>
                                     <a href="{% url 'edit-shelf' shelf.id %}" class="btn btn-sm btn-primary">Edit</a>
-                                    <a href="#" class="btn btn-sm btn-danger">Delete</a>
+                                    <a href="{% url 'delete-shelf' shelf.id %}" class="btn btn-sm btn-danger">Delete</a>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -100,15 +100,20 @@
             <div class="card-footer">
                 <nav aria-label="Page navigation example">
                     <ul class="pagination justify-content-center">
-                        <li class="page-item disabled">
-                            <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Back</a>
-                        </li>
-                        <li class="page-item"><a class="page-link" href="#">1</a></li>
-                        <li class="page-item"><a class="page-link" href="#">2</a></li>
-                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        {% if shelves.has_previous %}
                         <li class="page-item">
-                            <a class="page-link" href="#">Next</a>
+                            <a class="page-link" href="?page=1">&laquo; first</a>
+                            <a class="page-link" href="?page={{ shelves.previous_page_number }}">Back</a>
                         </li>
+                        {% endif %}
+                        <li class="page-item"><span>{{ shelves.number }}/{{ shelves.paginator.num_pages }}.</span></li>
+                        
+                        {% if shelves.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ shelves.next_page_number }}">Next</a>
+                            <a class="page-link" href="?page={{ shelves.paginator.num_pages }}">last &raquo;</a>
+                        </li>
+                        {% endif %}
                     </ul>
                 </nav>
             </div>

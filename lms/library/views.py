@@ -10,6 +10,7 @@ from django.db.models import Count
 from datetime import date
 from django.db.models import F, Value, Case, When, BooleanField
 from django.shortcuts import get_object_or_404
+from django.core.paginator import Paginator
 # Create your views here.
 def Login(request):
     if request.method == "POST":
@@ -71,9 +72,15 @@ def Shelves(request):
         space_left=F('capacity') - Count('book')
     )
 
+    # Set up pagination with 10 items per page
+    paginator = Paginator(shelves, 10)  # Show 10 shelves per page
+    page_number = request.GET.get('page')  # Get the page number from the URL query parameters
+    page_obj = paginator.get_page(page_number)  # Get the page object
+
     context = {
         'title':'Shelves',
-        'shelves':shelves
+        'shelves':shelves,
+        'shelves': page_obj,  # Pass the page object to the template
     }
     return render(request, 'Librarian/shelves.html', context)
 
