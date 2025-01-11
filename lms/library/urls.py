@@ -17,4 +17,6 @@ urlpatterns = [
     path('shelves/edit/<int:shelf_id>/', EditShelf, name='edit-shelf'),
     path('shelves/delete/<int:shelf_id>/', DeleteShelf, name='delete-shelf'),
     path('billing', Billing, name='lib-billing'),
+    path('billing-pdf/<int:student_id>/', billing_pdf, name='billing_pdf'),
+   
 ]

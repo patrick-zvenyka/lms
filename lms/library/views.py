@@ -12,6 +12,12 @@ from datetime import date
 from django.db.models import F, Value, Case, When, BooleanField
 from django.shortcuts import get_object_or_404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.forms import PasswordChangeForm
+from .forms import ProfilePasswordChangeForm
+from weasyprint import HTML
+from django.http import HttpResponse
+from django.template.loader import render_to_string
 # Create your views here.
 def Login(request):
     if request.method == "POST":
@@ -24,9 +30,9 @@ def Login(request):
                 login(request, user)
                 return redirect('lib-dashboard')  # Redirect to dashboard
             else:
-                auth_message = messages.error(request, "You do not have the required permissions to access this system.")
+                messages.error(request, "You do not have the required permissions to access this system.")
         else:
-            auth_message = messages.error(request, "Invalid username or password.")
+            messages.error(request, "Invalid username or password.")
 
     return render(request, 'Librarian/sign-in.html')
 
@@ -469,15 +475,53 @@ def DeleteBook(request, book_id):
 @login_required(login_url='lib-login')
 def Billing(request):
     
+    # Get search query for student_id and filter query for status
+    student_id_query = request.GET.get('student_id', '')
+    status_query = request.GET.get('status', '')
+
+    # Start with all borrowed or returned books with fines greater than 0
+    books = Borrow.objects.filter(fine__gt=0, status__in=['borrowed', 'returned','lost','damaged'])
+
+    # Apply search filter for student_id if provided
+    if student_id_query:
+        books = books.filter(student__id__icontains=student_id_query)
+
+    # Apply status filter if provided
+    if status_query:
+        books = books.filter(status=status_query)
+
+    # Set up pagination with 10 books per page
+    paginator = Paginator(books, 10)  # Show 10 books per page
+    page_number = request.GET.get('page')  # Get the page number from the URL query parameters
+    page_obj = paginator.get_page(page_number)  # Get the page object
+
     context = {
-        'title' : 'Billing'
+        'title': 'Books with Fines',
+        'borrowed_books': page_obj,  # Pass the page object to the template
+        'student_id_query': student_id_query,
+        'status_query': status_query,
     }
     return render(request, 'Librarian/billing.html', context)
 
-@login_required(login_url='lib-login')
-def Profile(request):
-
+def billing_pdf(request, student_id):
+    # Fetch the student's borrowed books and fines
+    student = get_object_or_404(Student, pk=student_id)
+    borrowed_books = Borrow.objects.filter(student=student)
+    
+    # Prepare the context for rendering the PDF template
     context = {
-        'title' : 'Profile'
+        'borrowed_books': borrowed_books,
+        'student': student,
     }
-    return render(request, 'profile.html', context)
+    
+    # Render the HTML template to a string
+    html_content = render_to_string('Librarian/billing_pdf.html', context)
+    
+    # Generate PDF from HTML
+    pdf_file = HTML(string=html_content).write_pdf()
+
+    # Return the PDF response
+    response = HttpResponse(pdf_file, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="billing_{student.id}.pdf"'
+    
+    return response

@@ -31,8 +31,8 @@
                     <button type="submit" class="btn bg-gradient-dark w-100 my-4 mb-2">Sign in</button>
                   </div>
 
-                  {% if auth_message %}
-                    {% for message in auth_message %}
+                  {% if message %}
+                    {% for message in messages %}
                     <span>{{ message }}</span>
                     {% endfor %}
                   {% endif %}
