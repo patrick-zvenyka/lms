@@ -565,7 +565,7 @@ def Billing(request):
 
 def billing_pdf(request, student_id):
     # Fetch the student's borrowed books and fines
-    student = get_object_or_404(Student, pk=student_id)
+    student = get_object_or_404(Student, student_id=student_id)
     borrowed_books = Borrow.objects.filter(student=student)
     subtotal = sum(borrow.fine for borrow in borrowed_books)
 
@@ -727,7 +727,8 @@ def SingleStudent(request, student_id):
     borrowed_books = Borrow.objects.filter(student=student).order_by('-borrow_date')
 
     # Get the associated fines for each borrowed book
-    fines_history = Fine.objects.filter(borrow__student=student).order_by('-created_at')
+    fines_history = Fine.objects.filter(borrow__student=student,status='unpaid').order_by('-created_at')
+
 
     context = {
         'title': f'Student Profile - {student.first_name} {student.last_name}',
@@ -737,6 +738,12 @@ def SingleStudent(request, student_id):
     }
 
     return render(request, 'Librarian/students-view.html', context)
+
+# @login_required(login_url='lib-login')
+# def ClearFine(request,fine_id):
+#      fine = get_object_or_404(Fine, fine_id=fine_id)
+
+
 
 @login_required(login_url='lib-login')
 def DeleteStudent(request, student_id):
@@ -765,3 +772,4 @@ def DeleteStudent(request, student_id):
         'student': student,  # Passing the student info to confirm the deletion
     }
     return render(request, 'Librarian/students-delete.html', context)
+

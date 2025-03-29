@@ -20,21 +20,12 @@ class Shelf(models.Model):
         return self.name
 
 class Book(models.Model):
-    BOOK_FORM_CHOICES = [
-        ('1','1'),
-        ('2','2'),
-        ('3','3'),
-        ('4','4'),
-        ('5','5'),
-        ('6','6'),
-    ]
+    
     isbn = models.CharField(max_length=13, unique=True)
     title = models.CharField(max_length=200)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
     shelf = models.ForeignKey(Shelf, on_delete=models.CASCADE)
-    form = models.CharField(max_length=1, choices=BOOK_FORM_CHOICES)  # Corrected this line
     price = models.DecimalField(max_digits=6, decimal_places=2, default=0.00)  # Add price field
-
     created_at = models.DateField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
@@ -44,6 +35,23 @@ class Book(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Intake(models.Model):
+    name = models.CharField(max_length=6,unique=True)
+    
+    def __str__(self):
+        return self.name
+
+class Program(models.Model):
+    PROGRAM_CHOICES = [
+        ('ECD','ECD'),
+        ('GENERAL','GENERAL')
+    ]
+    name = models.CharField(max_length=9, choices=PROGRAM_CHOICES)
+
+    def __str__(self):
+        return self.name
 
 
 class Student(models.Model):
@@ -71,12 +79,11 @@ class Student(models.Model):
         ('6C','6C'),
         ('6A','6A'),
     ]
-
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     student_id = models.CharField(max_length=20, unique=True)
     form = models.CharField(max_length=2, choices=STUDENT_FORM_CHOICES)
-    email = models.EmailField()
     phone = models.CharField(max_length=15)
     created_at = models.DateField(auto_now_add=True)
 
