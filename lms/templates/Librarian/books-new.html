@@ -42,16 +42,6 @@
                                     </select>
                                 </div>
 
-                                <div class="col-md-6 mb-3">
-                                    <label for="condition" class="form-label">Book Form</label>
-                                    <select id="form" name="form" class="form-select" required>
-                                        <option value="">Select Form</option>
-                                        {% for choice in book_form_choices %}
-                                            <option value="{{ choice.0 }}">{{ choice.1 }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-
                                 
                                 <div class="col-md-6 mb-3">
                                     <label for="condition" class="form-label">Shelf</label>
